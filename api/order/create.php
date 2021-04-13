@@ -26,32 +26,37 @@ if (!empty($data->productid) && !empty($data->userid) && !empty($data->unit_orde
     $dataProduct = readProduct($product,$data->productid);
     if ($dataProduct) {
         if ($dataProduct->stok != 0) {
-            // set product property values
-            $order->product_id = $data->productid;
-            $order->user_id = $data->userid;
-            $order->unit = $data->unit_order;
-            $order->notes = $data->notes;
-            $order->price_condition = $data->price_condition;
-            $order->price = $data->price_condition == 'disc' ? $dataProduct->price_discount : $dataProduct->price;
-            $order->payment_method = $data->payment_method;
-            $order->created_at = date('Y-m-d H:i:s');
-            
-            $stokUpdated = updateStok($product,$data,$dataProduct);
-            if ($stokUpdated) {
-                if($order->create()){
-                    http_response_code(200);
-                    echo json_encode(array("message" => "Succes create new order."));
-                }else{ // if unable to create the order, tell the user
+            if ($data->unit_order > 1) {
+                // set product property values
+                $order->product_id = $data->productid;
+                $order->user_id = $data->userid;
+                $order->unit = $data->unit_order;
+                $order->notes = $data->notes;
+                $order->price_condition = $data->price_condition;
+                $order->price = $data->price_condition == 'disc' ? $dataProduct->price_discount : $dataProduct->price;
+                $order->payment_method = $data->payment_method;
+                $order->created_at = date('Y-m-d H:i:s');
+                
+                $stokUpdated = updateStok($product,$data,$dataProduct);
+                if ($stokUpdated) {
+                    if($order->create()){
+                        http_response_code(200);
+                        echo json_encode(array("message" => "Succes create new order."));
+                    }else{ // if unable to create the order, tell the user
+                        http_response_code(500);
+                        echo json_encode(array("message" => "Unable to create order."));
+                    }
+                }else {
                     http_response_code(500);
                     echo json_encode(array("message" => "Unable to create order."));
                 }
             }else {
-                http_response_code(500);
-                echo json_encode(array("message" => "Unable to create order."));
+                http_response_code(200);
+                echo json_encode(array("message" => "Unable to create order. Unit order minimum 1"));
             }
         }else {
             http_response_code(200);
-            echo json_encode(array("message" => "Product out of stock."));
+            echo json_encode(array("message" => "Unable to create order. Product out of stock."));
         }
     }else {
         http_response_code(200);
